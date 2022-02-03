@@ -33,15 +33,24 @@ package com.raywenderlich.android.combinestagram
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.kotlin.subscribeBy
+import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: SharedViewModel
+
+    companion object {
+        const val PHOTOSBOTTOMDIALOGFRAGMENT = "PhotosBottomDialogFragment"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +72,7 @@ class MainActivity : AppCompatActivity() {
             actionSave()
         }
 
-        /*viewModel.getSelectedPhotos().observe(this, Observer { photos ->
+        viewModel.getSelectedPhotos().observe(this, Observer { photos ->
             photos?.let {
                 if (photos.isNotEmpty()) {
                     val bitmaps = photos.map {
@@ -80,20 +89,50 @@ class MainActivity : AppCompatActivity() {
                 }
                 updateUi(photos)
             }
-        })*/
+        })
 
     }
 
     private fun actionAdd() {
+        val addPhotoBottomDialogFragment = PhotosBottomDialogFragment.newInstance()
+        addPhotoBottomDialogFragment.show(supportFragmentManager, PHOTOSBOTTOMDIALOGFRAGMENT)
+        viewModel.subscribeSelectedPhotos(
+            addPhotoBottomDialogFragment.selectedPhotos
+        )
         //viewModel.addPhoto(PhotoStore.photos[0])
     }
 
     private fun actionClear() {
-        //viewModel.clearPhotos()
+        viewModel.clearPhotos()
     }
 
     private fun actionSave() {
-        println("actionSave")
+        viewModel.saveBitmapFromImageView(collageImage, this)
+                /*
+                You may have noticed that, when you saved a collage, the Save button freezes in the tapped state and the UI stopped responding.
+                Saving a photo to storage can take a long time, and is best done on a background thread.
+
+                The subscribeOn() method instructs the Single to do its subscription work on the IO scheduler.
+                The observeOn() method instructs the single to run the subscribeBy() code on the Android main thread.
+                * */
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnSubscribe {
+                Log.e("MainActivity", "Se chay cai nay truoc, 1 runner")
+                Toast.makeText(this, "Saving....",
+                    Toast.LENGTH_SHORT).show()
+            }
+            .subscribeBy(
+                onSuccess = { file ->
+                    Toast.makeText(this, "$file saved",
+                        Toast.LENGTH_SHORT).show()
+                },
+                onError = { e ->
+                    Toast.makeText(this,
+                        "Error saving file :${e.localizedMessage}",
+                        Toast.LENGTH_SHORT).show()
+                }
+            )
     }
 
     private fun updateUi(photos: List<Photo>) {
@@ -108,6 +147,15 @@ class MainActivity : AppCompatActivity() {
             )
         } else {
             getString(R.string.collage)
+        }
+
+        //Fix bug
+        val photosBottomDialogFragment =
+            supportFragmentManager.findFragmentByTag(PHOTOSBOTTOMDIALOGFRAGMENT) as PhotosBottomDialogFragment?
+        if (photosBottomDialogFragment != null && photosBottomDialogFragment.isVisible) {
+            if (photos.size >= 6)
+                supportFragmentManager.beginTransaction().remove(photosBottomDialogFragment)
+                    .commit()
         }
     }
 

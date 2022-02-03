@@ -38,6 +38,8 @@ import android.util.Log
 import android.widget.ImageView
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.kotlin.addTo
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -49,7 +51,7 @@ import java.io.OutputStream
 
 class SharedViewModel : ViewModel() {
 
-    /*private val disposables = CompositeDisposable()
+    private val disposables = CompositeDisposable()
 
     private val imagesSubject: BehaviorSubject<MutableList<Photo>> =
         BehaviorSubject.createDefault(mutableListOf())
@@ -79,29 +81,45 @@ class SharedViewModel : ViewModel() {
     fun clearPhotos() {
         imagesSubject.value?.clear()
         imagesSubject.onNext(imagesSubject.value!!)
-    }*/
+    }
 
+    fun subscribeSelectedPhotos(selectedPhotos: Observable<Photo>) {
+        selectedPhotos
+            .doOnComplete {
+                Log.v("SharedViewModel", "Completed selecting photos")
+            }
+            .subscribe { photo ->
+                imagesSubject.value?.add(photo)
+                imagesSubject.onNext(imagesSubject.value!!)
+            }
+            .addTo(disposables)
+    }
 
-    fun saveBitmapFromImageView(imageView: ImageView, context: Context) {
-        val tmpImg = "${System.currentTimeMillis()}.png"
+    fun saveBitmapFromImageView(imageView: ImageView, context: Context): Single<String> {
+        return Single.create { emitter ->
+            val tmpImg = "${System.currentTimeMillis()}.png"
 
-        val os: OutputStream?
+            val os: OutputStream?
 
-        val collagesDirectory = File(context.getExternalFilesDir(null), "collages")
-        if (!collagesDirectory.exists()) {
-            collagesDirectory.mkdirs()
-        }
+            val collagesDirectory = File(context.getExternalFilesDir(null), "collages")
+            if (!collagesDirectory.exists()) {
+                collagesDirectory.mkdirs()
+            }
 
-        val file = File(collagesDirectory, tmpImg)
+            val file = File(collagesDirectory, tmpImg)
+            Log.e("MainActivity", "Se chay cai nay sau, 2 runner")
+            try {
+                os = FileOutputStream(file)
+                val bitmap = (imageView.drawable as BitmapDrawable).bitmap
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
+                os.flush()
+                os.close()
 
-        try {
-            os = FileOutputStream(file)
-            val bitmap = (imageView.drawable as BitmapDrawable).bitmap
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
-            os.flush()
-            os.close()
-        } catch (e: IOException) {
-            Log.e("MainActivity", "Problem saving collage", e)
+                emitter.onSuccess(tmpImg)
+            } catch (e: IOException) {
+                Log.e("MainActivity", "Problem saving collage", e)
+                emitter.onError(e)
+            }
         }
     }
 }
