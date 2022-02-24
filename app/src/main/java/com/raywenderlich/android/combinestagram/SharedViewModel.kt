@@ -106,11 +106,11 @@ class SharedViewModel : ViewModel() {
             if (!collagesDirectory.exists()) {
                 collagesDirectory.mkdirs()
             }
-            Log.e("MainActivity", "Se chay cai nay sau, 2.1 runner")
+            Log.e("MainActivity", "Se chay cai nay sau, 2 runner")
             Thread.sleep(5000); // 5 Seconds
 
             val file = File(collagesDirectory, tmpImg)
-            Log.e("MainActivity", "Se chay cai nay sau, 2 runner")
+            Log.e("MainActivity", "Se chay cai nay sau, 2.1 runner")
             try {
                 os = FileOutputStream(file)
                 val bitmap = (imageView.drawable as BitmapDrawable).bitmap

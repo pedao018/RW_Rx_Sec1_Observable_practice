@@ -124,10 +124,12 @@ class MainActivity : AppCompatActivity() {
             }
             .subscribeBy(
                 onSuccess = { file ->
+                    Log.e("MainActivity", "Save Complete")
                     Toast.makeText(this, "$file saved",
                         Toast.LENGTH_SHORT).show()
                 },
                 onError = { e ->
+                    Log.e("MainActivity", "Save Error")
                     Toast.makeText(this,
                         "Error saving file :${e.localizedMessage}",
                         Toast.LENGTH_SHORT).show()
