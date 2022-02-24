@@ -159,4 +159,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        Log.e("MainActivity", "Se chay onPause")
+        super.onPause()
+    }
+
+    override fun onResume() {
+        Log.e("MainActivity", "Se chay onResume")
+        super.onResume()
+    }
+
+    override fun onDestroy() {
+        Log.e("MainActivity", "Se chay onDestroy")
+        super.onDestroy()
+
+    }
+
 }

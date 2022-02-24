@@ -66,6 +66,7 @@ class SharedViewModel : ViewModel() {
 
     override fun onCleared() {
         disposables.dispose()
+        Log.e("Viewmodel", "Se chay dispose")
         super.onCleared()
     }
 
@@ -105,6 +106,8 @@ class SharedViewModel : ViewModel() {
             if (!collagesDirectory.exists()) {
                 collagesDirectory.mkdirs()
             }
+            Log.e("MainActivity", "Se chay cai nay sau, 2.1 runner")
+            Thread.sleep(5000); // 5 Seconds
 
             val file = File(collagesDirectory, tmpImg)
             Log.e("MainActivity", "Se chay cai nay sau, 2 runner")
